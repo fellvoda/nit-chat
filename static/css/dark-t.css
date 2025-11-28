@@ -1,0 +1,93 @@
+/* static/css/dark-t.txt */
+/* === Темная тема === */
+body.dark-mode {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+}
+
+body.dark-mode .chat-header {
+    background: #2d2d2d;
+    color: white;
+}
+
+body.dark-mode .user-info {
+    color: #aaa;
+}
+
+body.dark-mode .chats-sidebar {
+    background: #2d2d2d;
+    border-right: 1px solid #444;
+}
+
+body.dark-mode .chat-item:hover {
+    background-color: #3b3b3b;
+}
+
+body.dark-mode .chat-item.active {
+    background-color: #3b3b3b;
+}
+
+body.dark-mode .search-container input {
+    background: #333;
+    color: white;
+    border: 1px solid #555;
+}
+
+body.dark-mode .messages-container {
+    background: #2d2d2d;
+}
+
+body.dark-mode .message {
+    background: #333;
+    color: #e0e0e0;
+}
+
+body.dark-mode .message-time {
+    color: #aaa;
+}
+
+body.dark-mode .message-input-container {
+    background: #2d2d2d;
+    border-top: 1px solid #444;
+}
+
+body.dark-mode #message-input {
+    background: #333;
+    color: white;
+    border: 1px solid #555;
+}
+
+body.dark-mode .search-results {
+    background: #333;
+    border: 1px solid #555;
+    border-top: none;
+}
+
+body.dark-mode .user-card:hover {
+    background: #3b3b3b;
+}
+
+body.dark-mode .user-nickname {
+    color: #e0e0e0;
+}
+
+body.dark-mode .chats-sidebar {
+    border-bottom: 1px solid #444;
+}
+
+/* === Темная тема для кнопок === */
+body.dark-mode #logout-btn {
+    background: #333333;
+}
+
+body.dark-mode #logout-btn:hover {
+    background: #555555;
+}
+
+body.dark-mode #theme-toggle {
+    background: #2c8a6a;
+}
+
+body.dark-mode #theme-toggle:hover {
+    background: #25755c;
+}
