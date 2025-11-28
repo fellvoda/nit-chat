@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIT-chat - {{ target_user.display_name }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" sizes="32x32">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-t.css') }}">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <div class="header-left">
+                <a href="{{ url_for('chat') }}" class="logo">
+                    <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Logo" width="32" height="32">
+                </a>
+                <h1 class="header-title">
+                    {% if target_user.uid == 'formyself' %}
+                        Избранное
+                    {% else %}
+                        Личные сообщения с {{ target_user.display_name }}
+                    {% endif %}
+                </h1>
+                <span class="user-info">Личная переписка</span>
+            </div>
+            <div class="header-right">
+                <a href="{{ url_for('logout') }}" id="logout-btn">Выйти</a>
+                <button id="theme-toggle" class="btn btn-outline">🌙</button>
+            </div>
+        </header>
+        
+        <div class="chat-layout">
+            <div class="chats-sidebar">
+                <div class="search-container">
+                    <input type="text" id="chat-search" placeholder="Поиск пользователя..." autocomplete="off">
+                </div>
+                <h3>Чаты</h3>
+                <ul class="chats-list">
+                    <li class="chat-item">
+                        <a href="{{ url_for('chat') }}">Общий чат</a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="chat-main">
+                <div class="messages-container" id="messages-container">
+                </div>
+            </div>
+        </div>
+        
+        <div class="message-input-container">
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Введите сообщение..." autocomplete="off" maxlength="1000">
+                <button type="submit" class="btn btn-primary">Отправить</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+        function updateTheme() {
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                themeToggle.textContent = '☀️';
+                localStorage.setItem('darkMode', 'true');
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeToggle.textContent = '🌙';
+                localStorage.setItem('darkMode', 'false');
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            updateTheme();
+        });
+
+        updateTheme();
+
+        function loadMessages() {
+            let url;
+            const currentPath = window.location.pathname;
+            
+            if (currentPath === '/pm/formyself') {
+                // Для избранного загружаем сообщения от себя себе
+                url = `/api/messages/private/{{ current_user.uid }}`;
+            } else {
+                // Для обычных личных сообщений
+                const username = '{{ target_user.uid }}';
+                url = `/api/messages/private/${encodeURIComponent(username)}`;
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(messages => {
+                    const container = document.getElementById('messages-container');
+                    const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 1;
+                    
+                    container.innerHTML = '';
+                    
+                    messages.forEach(msg => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = 'message';
+                        messageDiv.innerHTML = `
+                            <div class="message-header">
+                                <span class="message-sender">${msg.sender_display_name || msg.sender_uid}</span>
+                                <span class="message-uid">(${msg.sender_uid})</span>
+                                <span class="message-time">${formatTime(msg.timestamp)}</span>
+                            </div>
+                            <div class="message-text">${escapeHtml(msg.text)}</div>
+                        `;
+                        container.appendChild(messageDiv);
+                    });
+                    
+                    if (isScrolledToBottom) {
+                        container.scrollTop = container.scrollHeight;
+                    }
+                })
+                .catch(error => console.error('Ошибка загрузки сообщений:', error));
+        }
+
+        function loadChats() {
+            fetch('/api/chats/list')
+                .then(response => response.json())
+                .then(chats => {
+                    const chatList = document.querySelector('.chats-list');
+                    
+                    // Всегда показываем общий чат
+                    let html = '<li class="chat-item' + (window.location.pathname === '/chat' ? ' active' : '') + '"><a href="/chat">Общий чат</a></li>';
+                    
+                    // Добавляем личные чаты
+                    chats.forEach(chat => {
+                        if (chat.is_favorite) {
+                            const isActive = window.location.pathname === `/pm/formyself`;
+                            html += `<li class="chat-item${isActive ? ' active' : ''}"><a href="/pm/formyself">${chat.display_name}</a></li>`;
+                        } else {
+                            const isActive = window.location.pathname === `/pm/${chat.username}`;
+                            html += `<li class="chat-item${isActive ? ' active' : ''}"><a href="/pm/${chat.username}">${chat.display_name}</a></li>`;  // Отображаем display_name, а не username
+                        }
+                    });
+                    
+                    chatList.innerHTML = html;
+                })
+                .catch(error => console.error('Ошибка загрузки чатов:', error));
+        }
+
+        document.getElementById('chat-search')?.addEventListener('input', function(e) {
+            const query = e.target.value;
+            const searchResults = document.querySelector('.search-results');
+            
+            if (searchResults) {
+                searchResults.remove();
+            }
+            
+            if (query.length >= 2) {
+                fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(users => {
+                        const uniqueUsers = [...new Map(users.map(user => [user.display_name, user])).values()];
+                        
+                        const searchContainer = document.getElementById('chat-search');
+                        const results = document.createElement('div');
+                        results.className = 'search-results';
+                        
+                        uniqueUsers.forEach(user => {
+                            const result = document.createElement('div');
+                            result.className = 'search-result';
+                            result.innerHTML = `
+                                <div class="user-card" onclick="window.location.href='/pm/${user.uid}'">
+                                    <span class="user-nickname">${user.display_name}</span>
+                                    <span class="user-uid">${user.uid}</span>
+                                </div>
+                            `;
+                            results.appendChild(result);
+                        });
+                        
+                        searchContainer.parentNode.appendChild(results);
+                    });
+            }
+        });
+
+        document.getElementById('message-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            
+            if (text) {
+                const isFavoriteChat = window.location.pathname === '/pm/formyself';
+                const receiver = isFavoriteChat ? 'formyself' : '{{ target_user.uid }}';
+                
+                fetch('/api/messages/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        receiver: receiver
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        input.value = '';
+                        loadMessages();
+                    }
+                })
+                .catch(error => console.error('Ошибка отправки:', error));
+            }
+        });
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            
+            const isToday = date.toDateString() === now.toDateString();
+            const isYesterday = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).toDateString() === now.toDateString();
+            
+            if (isToday) {
+                return date.toLocaleTimeString('ru-RU', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } else if (isYesterday) {
+                return 'Вчера ' + date.toLocaleTimeString('ru-RU', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } else {
+                return date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        setInterval(() => {
+            loadMessages();
+            loadChats();
+        }, 2000);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMessages();
+            loadChats();
+        });
+    </script>
+</body>
+</html>
