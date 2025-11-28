@@ -75,6 +75,30 @@ footer {
     max-width: 400px;
 }
 
+
+.auth-form .auth-links {
+    text-align: center;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Отступ между кнопками */
+}
+
+.auth-form .auth-links a {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #3eb489; /* Мятный цвет */
+    color: white;
+    text-decoration: none;
+    border-radius: 8px; /* Прямоугольные со скруглёнными углами */
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.auth-form .auth-links a:hover {
+    background-color: #2c8a6a;
+}
+
 .form-group {
     margin-bottom: 20px;
 }
@@ -107,11 +131,11 @@ footer {
 
 /* === Кнопка "Зарегистрироваться" (ширина под шрифт + 5px слева и справа) === */
 .btn-register {
-    background-color: #2c8a6a; /* Потемнее мятный */
+    background-color: #32a57f; /* Потемнее мятный */
     color: white;
     border: none;
     border-radius: 8px;
-    padding: 12px 5px;         /* 5px слева и справа */
+    padding: 9px 50px;         /* 5px слева и справа */
     font-size: 16px;
     cursor: pointer;
     text-align: center;
@@ -132,7 +156,7 @@ footer {
     color: white;
     border: none;
     border-radius: 8px;
-    padding: 12px 5px;         /* 5px слева и справа */
+    padding: 7px 10px;         /* 5px слева и справа */
     font-size: 14px;          /* Шрифт 14px */
     cursor: pointer;
     text-align: center;
